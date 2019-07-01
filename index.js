@@ -58,12 +58,17 @@ app.get('/api/persons', (req, res) => {
   app.get('/api/persons/:id', (request, response) => {
     const id = Number(request.params.id)
     const yhteystieto = persons.find(person => person.id === id)
-    response.json(yhteystieto)
+      if (yhteystieto) {
+        response.json(yhteystieto)
+      } else {
+        response.status(404).end()
+      }
   })
-  app.get('/api/persons/:info', (request, response) => {
+  app.get('/info', (request, response) => {
       const summa=persons.length
-      console.log(summa)
-      response.send(`<h1>Yhteystietoja on yhteensä ${summa}.</h1>`)
+      const paiva=new Date()
+      response.send(`<p>Yhteystietoja on yhteensä ${summa}.<br/>${paiva}
+      </p>`)
   })
 
 const port = 3001
