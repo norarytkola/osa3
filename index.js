@@ -1,8 +1,11 @@
 const express = require('express')
 const app = express()
+const bodyParser = require('body-parser')
+
+app.use(bodyParser.json())
 
 
-const persons=[
+let persons=[
     {
         "name": "Maija Meriaho",
         "number": "050-2677692",
@@ -61,7 +64,7 @@ app.get('/api/persons', (req, res) => {
       if (yhteystieto) {
         response.json(yhteystieto)
       } else {
-        response.status(404).end()
+        return response.status(404).end()
       }
   })
   app.get('/info', (request, response) => {
@@ -70,6 +73,58 @@ app.get('/api/persons', (req, res) => {
       response.send(`<p>Yhteystietoja on yhteensä ${summa}.<br/>${paiva}
       </p>`)
   })
+
+  app.delete('/persons/:id', (request, response) => {
+    let id = Number(request.params.id)
+    persons = persons.filter(person => person.id !== id)
+
+  response.status(204).end()
+  })
+
+  const generateId = () => {
+    const maxId = persons.length > 0
+      ? Math.max(...persons.map(p => p.id))
+      : 0
+    return maxId + 1
+  }
+
+  app.post('/api/persons', (req, res)=>{
+    const body = req.body
+  if (!body.name) {
+    return res.status(400).json({ 
+      error: 'Nimi puuttuu' 
+    })
+  } 
+  else if (!body.number){
+    return res.status(400).json({
+      error: 'Numero puuttuu'
+    })
+
+  } else {
+  const i=persons.length
+  for (let a=0;  a < i; a++){
+    if (persons[a].name===body.name){
+      return res.status(400).json({
+        error: 'Nimi on jo yhteystiedoissa'
+      })
+    } else if (persons[a].number===body.number){
+    return res.status(400).json({
+      error: 'Numero on jo puhelinluettelossa.'
+    })}
+ }
+   
+  const person = {
+    name:body.name,
+    number:body.number,
+    id: generateId(),
+    important:body.important || true
+  }
+  
+  persons = persons.concat(person)
+  res.json(person)
+  }
+})
+  
 
 const port = 3001
 app.listen(port, () =>{
