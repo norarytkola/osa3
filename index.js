@@ -1,7 +1,9 @@
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
-
+const morgan=require('morgan')
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :postcontent'))
+morgan.token('postcontent', (req, res) => { return JSON.stringify(req.body) })
 app.use(bodyParser.json())
 
 
@@ -67,10 +69,10 @@ app.get('/api/persons', (req, res) => {
         return response.status(404).end()
       }
   })
-  app.get('/info', (request, response) => {
+  app.get('/info', (req, res) => {
       const summa=persons.length
       const paiva=new Date()
-      response.send(`<p>Yhteystietoja on yhteensä ${summa}.<br/>${paiva}
+      res.send(`<p>Yhteystietoja on yhteensä ${summa}.<br/>${paiva}
       </p>`)
   })
 
