@@ -5,6 +5,8 @@ const morgan=require('morgan')
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :postcontent'))
 morgan.token('postcontent', (req, res) => { return JSON.stringify(req.body) })
 app.use(bodyParser.json())
+const cors = require('cors')
+app.use(cors())
 
 
 let persons=[
@@ -127,8 +129,7 @@ app.get('/api/persons', (req, res) => {
   }
 })
   
-
-const port = 3001
-app.listen(port, () =>{
-console.log(`Server running on port ${port}`)
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
 })
