@@ -7,6 +7,8 @@ morgan.token('postcontent', (req, res) => { return JSON.stringify(req.body) })
 app.use(bodyParser.json())
 const cors = require('cors')
 app.use(cors())
+app.use(express.static('build'))
+
 
 
 let persons=[
@@ -54,9 +56,7 @@ let persons=[
       }
 ]
 
-app.get('/', (request, response) => {
-    response.send('<h1>Puhelinluettelo</h1>')
-  })
+
 
 app.get('/api/persons', (req, res) => {
     res.json(persons)
