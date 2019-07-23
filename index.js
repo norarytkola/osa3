@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
@@ -7,9 +8,7 @@ morgan.token('postcontent', (req, res) => { return JSON.stringify(req.body) })
 app.use(bodyParser.json())
 const cors = require('cors')
 app.use(cors())
-app.use(express.static('build'))
-
-
+const Person = require('./models/contact')
 
 let persons=[
     {
@@ -55,35 +54,37 @@ let persons=[
         "id": 17
       }
 ]
+app.use(express.static('build'))
 
-
-
-app.get('/api/persons', (req, res) => {
-    res.json(persons)
+app.get('/api/persons', (req, res, next) => {
+  Person.find({}).then(persons => {
+    res.json(persons.map(pers=>pers.toJSON()))
   })
+})
 
-  app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const yhteystieto = persons.find(person => person.id === id)
-      if (yhteystieto) {
-        response.json(yhteystieto)
-      } else {
+app.get('/api/persons/:id', (request, response, next) => {
+  Person.findById(request.params.id).then(person => {
+      response.json(person.toJSON())
+    })
+      if (person===undefined) {
         return response.status(404).end()
       }
   })
-  app.get('/info', (req, res) => {
-      const summa=persons.length
-      const paiva=new Date()
+
+app.get('/info', (req, res, next) => {
+    const summa=persons.length
+    const paiva=new Date()
       res.send(`<p>Yhteystietoja on yhteensä ${summa}.<br/>${paiva}
       </p>`)
   })
 
-  app.delete('/persons/:id', (request, response) => {
-    let id = Number(request.params.id)
-    persons = persons.filter(person => person.id !== id)
-
-  response.status(204).end()
-  })
+app.delete('/persons/:id', (request, response, next) => {
+  Person.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
+})
 
   const generateId = () => {
     const maxId = persons.length > 0
@@ -92,44 +93,42 @@ app.get('/api/persons', (req, res) => {
     return maxId + 1
   }
 
-  app.post('/api/persons', (req, res)=>{
-    const body = req.body
-  if (!body.name) {
+app.post('/api/persons', (req, res, next)=>{
+  const body = req.body
+  if (body.name=== undefined) {
     return res.status(400).json({ 
       error: 'Nimi puuttuu' 
     })
   } 
-  else if (!body.number){
+  else if (body.number===undefined){
     return res.status(400).json({
       error: 'Numero puuttuu'
     })
-
   } else {
-  const i=persons.length
-  for (let a=0;  a < i; a++){
-    if (persons[a].name===body.name){
-      return res.status(400).json({
-        error: 'Nimi on jo yhteystiedoissa'
-      })
-    } else if (persons[a].number===body.number){
-    return res.status(400).json({
-      error: 'Numero on jo puhelinluettelossa.'
-    })}
- }
-   
-  const person = {
+  const person = new Person({
     name:body.name,
     number:body.number,
     id: generateId(),
     important:body.important || true
-  }
+  })
   
-  persons = persons.concat(person)
-  res.json(person)
-  }
-})
+  person.save().then(savedPerson => {
+    res.json(savedPerson.toJSON())
+  })
+  .catch(error => next(error))
+  }})
+
+  const errorHandler = (error, req, res, next) => {
+    console.error(error.message)
   
-const PORT = process.env.PORT || 3001
+    if (error.name === 'CastError' && error.kind == 'ObjectId') {
+      return res.status(400).send({ error: 'malformatted id' })
+    } 
+    next(error)
+  }
+  app.use(errorHandler)
+  
+const PORT = process.env.PORT  
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
