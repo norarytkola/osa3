@@ -56,6 +56,12 @@ let persons=[
 ]
 app.use(express.static('build'))
 
+app.get('/persons',( req, res) =>{
+  Person.find({}).then(persons => {
+    res.json(persons.map(pers=>pers.toJSON()))
+  })
+})
+
 app.get('/api/persons', (req, res, next) => {
   Person.find({}).then(persons => {
     res.json(persons.map(pers=>pers.toJSON()))
